@@ -24,7 +24,17 @@ class Message:
   def move_prompt(self):
     return("Make your move: ")
   def move_error(self):
-    return("Error: Please enter a valid column number.")  
+    return("Error: Please enter a valid column number.")
+  def human_is(self, player):
+    return(f"You are {player}")
+  def computers_move(self):
+    return("Computer's move")
+  def winner(self, player):
+    return(f"Winner: {player}")
+  def tie(self):
+    return("Tie game")
+  def thanks(self):
+    return("Thanks for playing. To start a new game, run the script again.")  
 
 class CLI:
   '''Controls operations to receive input from the user on the command line 
@@ -67,4 +77,15 @@ class CLI:
     print("_"*28)
     for col in board:
       print(f"| {' | '.join(col)} |")
-    print("¯"*28)      
+    print("¯"*28)
+    print("  0   1   2   3   4   5   6")
+  def human_is(self, player):
+    print(Message().human_is(player))
+  def computers_move(self):
+    print(Message().computers_move())
+  def end_winner(self, player):
+    print(Message().winner(player))
+  def end_tie(self):
+    print(Message().tie())
+  def thanks(self):
+    print(Message().thanks())  

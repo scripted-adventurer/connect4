@@ -1,4 +1,5 @@
 import itertools 
+import random
 
 class Board:
   '''Logically represents the board used in gameplay, including methods to make a
@@ -11,7 +12,10 @@ class Board:
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' ']
-    ]
+    ]  
+  def human_goes_first(self):
+    # randomly selects if the human player goes first or second
+    return random.choice([True, False])
   def move(self, column, player1):
     # place the piece in the column in the first empty slot from the bottom
     # return True if successful, False if the column is full
@@ -28,59 +32,76 @@ class Board:
     # check if there is a horizontal connect 4 to the right (higher column) from here
     # skip checking columns 4 - 6 as any connect 4 here would be captured earlier
     if column > 3:
-      return False
+      return (False, '')
     if (self.board[row][column] != ' ' and 
       self.board[row][column] == self.board[row][column + 1] and 
       self.board[row][column] == self.board[row][column + 2] and 
       self.board[row][column] == self.board[row][column + 3]):
-      return True
+      return (True, self.board[row][column])
     else:
-      return False  
+      return (False, '')
   def _vertical_winner(self, row, column):
     # check if there is a vertical connect 4 up (lower row) from here
     # skip checking rows 0 - 2 as any connect 4 here would be captured earlier
     if row < 3:
-      return False
+      return (False, '')
     if (self.board[row][column] != ' ' and 
       self.board[row][column] == self.board[row - 1][column] and 
       self.board[row][column] == self.board[row - 2][column] and 
       self.board[row][column] == self.board[row - 3][column]):
-      return True
+      return (True, self.board[row][column])
     else:
-      return False  
+      return (False, '') 
   def _diagonal_up_winner(self, row, column):
     # check if there is a diagonal connect 4 up and to the right from here
     # skip rows 0 - 2 and columns 4 - 6 as up-right diagonals are not possible from there 
     if row < 3 or column > 3:
-      return False 
+      return (False, '')
     if (self.board[row][column] != ' ' and 
       self.board[row][column] == self.board[row - 1][column + 1] and 
       self.board[row][column] == self.board[row - 2][column + 2] and 
       self.board[row][column] == self.board[row - 3][column + 3]):
-      return True
+      return (True, self.board[row][column])
     else:
-      return False 
+      return (False, '')
   def _diagonal_down_winner(self, row, column):
     # check if there is a diagonal connect 4 down and to the right from here
     # skip rows 0 - 2 and columns 4 - 6 as down-right diagonals are not possible from there 
     if row >= 3 or column > 3:
-      return False 
+      return (False, '')
     if (self.board[row][column] != ' ' and 
       self.board[row][column] == self.board[row + 1][column + 1] and 
       self.board[row][column] == self.board[row + 2][column + 2] and 
       self.board[row][column] == self.board[row + 3][column + 3]):
-      return True
+      return (True, self.board[row][column])
     else:
-      return False 
-  def check_winner(self):
-    # search bottom (highest row) to top, left (lowest column) to right 
+      return (False, '')
+  def end_of_game(self):    
+    # check for winner, bottom (highest row) to top, left (lowest column) to right 
     rows = range(5, -1, -1)
     columns = range(7)
     for row, column in itertools.product(rows, columns):
-      if (self._horizontal_winner(row, column) or self._vertical_winner(row, column) 
-        or self._diagonal_up_winner(row, column) or 
-        self._diagonal_down_winner(row, column)):
-        return True
-    return False     
+      horizontal = self._horizontal_winner(row, column)
+      vertical = self._vertical_winner(row, column)
+      diagonal_up = self._diagonal_up_winner(row, column)
+      diagonal_down = self._diagonal_down_winner(row, column)
+      if horizontal[0]:
+        return horizontal
+      elif vertical[0]:
+        return vertical
+      elif diagonal_up[0]:
+        return diagonal_up
+      elif diagonal_down[0]:
+        return diagonal_down
+    # check for tie game
+    rows_full = True
+    for column in range(7):
+      if self.board[0][column] == ' ':
+        rows_full = False
+        break
+    if rows_full:
+      return (True, 'Tie')    
+    # otherwise 
+    return (False, '')
   def get_board(self):
     return self.board  
