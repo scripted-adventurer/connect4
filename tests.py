@@ -6,7 +6,7 @@ import copy
 
 from board import Board
 from cli import CLI
-from move_decision import MoveDecisionBase, MoveDecisionEasy
+from move_decision import MoveDecisionBase, MoveDecisionEasy, MoveDecisionMedium
 
 class TestIO(unittest.TestCase):
 
@@ -187,50 +187,44 @@ class TestBoard(unittest.TestCase):
 
 class TestMoveDecisionBase(unittest.TestCase):
 
-  def setUp(self):
-    self.decision = MoveDecisionBase(Board().get_board())
-    self.empty_board = [
+  def test_available_moves(self):
+    empty_board = [
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '] ]
-
-  def test_available_moves(self):
-    self.decision.get_available_moves()
-    self.assertEqual(self.decision.available_moves, [0, 1, 2, 3, 4, 5, 6])
+    self.decision = MoveDecisionBase(empty_board)  
+    self.assertEqual(self.decision.available_moves, [(5, 0), (5, 1), (5, 2), 
+      (5, 3), (5, 4), (5, 5), (5, 6)])
     # check all columns
     for column in range(7):
-      board = copy.deepcopy(self.empty_board)
+      board = copy.deepcopy(empty_board)
       board[0][column] = 'O'
       board[1][column] = 'X'
       board[2][column] = 'O'
       board[3][column] = 'O'
       board[4][column] = 'X'
       board[5][column] = 'X'
-      expected = list(range(7))
+      expected = [(5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6)]
       expected.pop(column)
       self.decision = MoveDecisionBase(board)
-      self.decision.get_available_moves()
       self.assertEqual(self.decision.available_moves, expected)
 
 class TestMoveDecisionEasy(unittest.TestCase):
 
-  def setUp(self):
-    self.decision = MoveDecisionEasy(Board().get_board())
-    self.empty_board = [
+  def test_move(self):
+    # check that the randomly selected column isn't full (for each column)
+    empty_board = [
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '],
       [' ', ' ', ' ', ' ', ' ', ' ', ' '] ]
-
-  def test_move(self):
-    # check that the randomly selected column isn't full (for each column)
     for column in range(7):
-      board = copy.deepcopy(self.empty_board)
+      board = copy.deepcopy(empty_board)
       board[0][column] = 'O'
       board[1][column] = 'X'
       board[2][column] = 'O'
@@ -238,7 +232,158 @@ class TestMoveDecisionEasy(unittest.TestCase):
       board[4][column] = 'X'
       board[5][column] = 'X'
       self.decision = MoveDecisionEasy(board)
-      self.assertNotEqual(self.decision.move(), column)          
+      self.assertNotEqual(self.decision.move(), column)
+
+class TestMoveDecisionMedium(unittest.TestCase):
+
+  def setUp(self):
+    self.empty_board = [
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '],
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '],
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '],
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '],
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '],
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '] ]
+    self.partial_board = [
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '],
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '],
+      [' ', ' ', ' ', ' ', ' ', ' ', 'X'],
+      [' ', 'X', ' ', 'O', 'O', ' ', 'O'],
+      ['X', 'O', ' ', 'X', 'X', ' ', 'X'],
+      ['O', 'X', ' ', 'X', 'O', ' ', 'O'] ]
+    self.mostly_full_board = [
+      [' ', ' ', ' ', ' ', ' ', ' ', ' '],
+      ['O', 'X', ' ', 'X', ' ', ' ', 'O'],
+      ['O', 'O', 'X', 'O', ' ', 'O', 'O'],
+      ['X', 'X', 'O', 'O', 'X', 'X', 'X'],
+      ['O', 'O', 'X', 'X', 'O', 'O', 'O'],
+      ['X', 'X', 'O', 'X', 'X', 'X', 'X'] ]     
+
+  def test_empty_board(self):
+    self.decision = MoveDecisionMedium(self.empty_board)
+    self.assertEqual(self.decision._empty_board(), True)
+
+    self.decision = MoveDecisionMedium(self.partial_board)
+    self.assertEqual(self.decision._empty_board(), False) 
+
+    self.decision = MoveDecisionMedium(self.mostly_full_board)
+    self.assertEqual(self.decision._empty_board(), False) 
+
+  def test_is_player_1(self):
+    self.decision = MoveDecisionMedium(self.empty_board)
+    self.assertEqual(self.decision._computer_player_1(), True)
+
+    self.decision = MoveDecisionMedium(self.partial_board)
+    self.assertEqual(self.decision._computer_player_1(), False) 
+
+    self.decision = MoveDecisionMedium(self.mostly_full_board)
+    self.assertEqual(self.decision._computer_player_1(), False)  
+
+  def test_score_position(self):
+    self.decision = MoveDecisionMedium(self.empty_board)
+    expected = {'p1_vertical': 0, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 0}
+    for column in range(7):
+      observed = self.decision._score_position(5, column)
+      self.assertEqual(observed, expected)
+    
+    self.decision = MoveDecisionMedium(self.partial_board)  
+    expected = {'p1_vertical': 1, 'p1_horizontal': 1, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 1}
+    observed = self.decision._score_position(3, 0)
+    self.assertEqual(observed, expected) 
+    
+    expected = {'p1_vertical': 1, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(2, 1)
+    self.assertEqual(observed, expected)
+    
+    expected = {'p1_vertical': 0, 'p1_horizontal': 2, 'p1_diagonal_NE': 1, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 1}
+    observed = self.decision._score_position(5, 2)
+    self.assertEqual(observed, expected)
+    
+    expected = {'p1_vertical': 0, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 1, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 1}
+    observed = self.decision._score_position(2, 3)
+    self.assertEqual(observed, expected)
+    
+    expected = {'p1_vertical': 0, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 1, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 1, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(2, 4)
+    self.assertEqual(observed, expected)
+    
+    expected = {'p1_vertical': 0, 'p1_horizontal': 0, 'p1_diagonal_NE': 1, 
+      'p1_diagonal_SE': 1, 'p2_vertical': 0, 'p2_horizontal': 2, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(5, 5)
+    self.assertEqual(observed, expected)
+    
+    expected = {'p1_vertical': 1, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(1, 6)
+    self.assertEqual(observed, expected) 
+    
+    self.decision = MoveDecisionMedium(self.mostly_full_board)  
+    expected = {'p1_vertical': 0, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 2, 'p2_vertical': 2, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(0, 0)
+    self.assertEqual(observed, expected)  
+    
+    expected = {'p1_vertical': 1, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 1, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(0, 1)
+    self.assertEqual(observed, expected)  
+    
+    expected = {'p1_vertical': 1, 'p1_horizontal': 2, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 1, 'p2_diagonal_SE': 1}
+    observed = self.decision._score_position(1, 2)
+    self.assertEqual(observed, expected)  
+    
+    expected = {'p1_vertical': 1, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(0, 3)
+    self.assertEqual(observed, expected)  
+    
+    expected = {'p1_vertical': 1, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 2, 'p2_vertical': 0, 'p2_horizontal': 3, 
+      'p2_diagonal_NE': 1, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(2, 4)
+    self.assertEqual(observed, expected)  
+    
+    expected = {'p1_vertical': 0, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 1, 'p2_horizontal': 1, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 1}
+    observed = self.decision._score_position(1, 5)
+    self.assertEqual(observed, expected)  
+    
+    expected = {'p1_vertical': 0, 'p1_horizontal': 0, 'p1_diagonal_NE': 0, 
+      'p1_diagonal_SE': 0, 'p2_vertical': 2, 'p2_horizontal': 0, 
+      'p2_diagonal_NE': 0, 'p2_diagonal_SE': 0}
+    observed = self.decision._score_position(0, 6)
+    self.assertEqual(observed, expected) 
+
+  def test_move(self):
+    self.decision = MoveDecisionMedium(self.empty_board)
+    #self.assertEqual(self.decision.move(), 3)  
+
+    self.decision = MoveDecisionMedium(self.partial_board)
+    self.assertEqual(self.decision.move(), 2)
+
+    self.decision = MoveDecisionMedium(self.mostly_full_board)
+    self.assertEqual(self.decision.move(), 4)
+      
 
 if __name__ == '__main__':
   unittest.main()

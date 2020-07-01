@@ -52,8 +52,8 @@ class Board:
       return (True, self.board[row][column])
     else:
       return (False, '') 
-  def _diagonal_up_winner(self, row, column):
-    # check if there is a diagonal connect 4 up and to the right from here
+  def _diagonal_NE_winner(self, row, column):
+    # check if there is a diagonal connect 4 NorthEast (up and to the right) from here
     # skip rows 0 - 2 and columns 4 - 6 as up-right diagonals are not possible from there 
     if row < 3 or column > 3:
       return (False, '')
@@ -64,8 +64,8 @@ class Board:
       return (True, self.board[row][column])
     else:
       return (False, '')
-  def _diagonal_down_winner(self, row, column):
-    # check if there is a diagonal connect 4 down and to the right from here
+  def _diagonal_SE_winner(self, row, column):
+    # check if there is a diagonal connect 4 SouthEast (down and to the right) from here
     # skip rows 0 - 2 and columns 4 - 6 as down-right diagonals are not possible from there 
     if row >= 3 or column > 3:
       return (False, '')
@@ -83,8 +83,8 @@ class Board:
     for row, column in itertools.product(rows, columns):
       horizontal = self._horizontal_winner(row, column)
       vertical = self._vertical_winner(row, column)
-      diagonal_up = self._diagonal_up_winner(row, column)
-      diagonal_down = self._diagonal_down_winner(row, column)
+      diagonal_up = self._diagonal_NE_winner(row, column)
+      diagonal_down = self._diagonal_SE_winner(row, column)
       if horizontal[0]:
         return horizontal
       elif vertical[0]:

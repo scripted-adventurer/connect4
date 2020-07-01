@@ -16,14 +16,46 @@ This level uses an incredibly simple algorithm: given all the available moves, c
 
 ### Medium ###
 
-This level uses a more nuanced decision making hierarchy. Each potential move (of which there are at maximum 7, corresponding to the 7 columns of the game board) is assigned a multi dimensional score based on the count of different groupings of pieces attached to that slot (evaluating horizontal, vertical, and diagonal groupings - in other words, all the ways to win):
-1. Three of the computer's pieces. Going here will win the game for the computer.
-2. Three of the human player's pieces. Going here will prevent a win by the human player. 
-3. Two of the computer's pieces. 
-4. Two of the opponent's pieces.
-5. One of the computer's pieces. 
+This level uses a more nuanced decision making hierarchy. 
 
-The slot with the highest score at level 1 is selected. Ties are broken by the scores at subsequent levels. If two slots have the exact same score from all levels, one is selected randomly. 
+If the computer is player 1, go in the middle at the start of the game. Connect 4 is a solved game, and analysis shows that this move is most advantageous. 
+
+For any other move, evaluate each potential board slot (of which there are at maximum 7, corresponding to the 7 columns of the game board) by finding, in each direction, the number of each player's pieces that are directly connected to the slot.
+
+This score table looks like this:
+
+```
+{'p1_vertical': 0, 'p1_horizontal': 0, 'p1_diagonal_up': 0, 'p1_diagonal_down': 0, 'p2_vertical': 0, 'p2_horizontal': 0, 'p2_diagonal_up': 0, 'p1_diagonal_down': 0}
+```
+
+As an example, consider the following game board:
+
+```
+|   |   |   |   |   |   |   |
+|   |   |   |   |   |   |   |
+|   |   |   |   |   |   | X |
+|   | X |   | O | O |   | O |
+| X | O |   | X | X |   | X |
+| O | X |   | X | O |   | O |
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+  0   1   2   3   4   5   6
+```  
+
+Here X is player 1, and O is player 2. If the computer were evaluating column 2:
+* p1_vertical and p2_vertical are both 0, as there are no pieces below the slot.
+* p1_horizontal is 2, as there is one X piece to the left and one X piece to the right of the slot. 
+* p2_horizontal is 0, as there are no O pieces to the left or the right of the slot. 
+* p1_diagonal_NE is 1, as there is one X piece on a northeast/southwest line from the slot.
+* p1_diagonal_SE is 0, as there are no X pieces on a southeast/northwest line from the slot.
+* p2_diagonal_NE is 0, as there are no O pieces on a northeast/southwest line from the slot.
+* p2_diagonal_SE is 1, as there is one O pieces on a southeast/northwest line from the slot.
+
+Then each move is considered and the following decision making algorithm is applied:
+* If any potential move has any score of 3+ for the computer player, select that move. (This will win the game.)
+* If any potential move has a score of 3+ for the human player, select that move. (This will prevent the human player from winning on the next turn.)
+* Otherwise, find the move with the highest sum across all dimensions of the score. Ties are broken by selecting the move closest to the middle of the board. 
+
+This approach results in play that seeks to build up chains of the computer's own pieces and block chains of the human player's pieces.
 
 ### Hard ###
 
